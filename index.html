@@ -1,0 +1,2639 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LifeOS — Your Life Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+
+  <style>
+    /* ============================================================
+       CSS CUSTOM PROPERTIES — THEME TOKENS
+    ============================================================ */
+    :root {
+      --radius: 18px;
+      --radius-sm: 10px;
+      --transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      --font-display: 'DM Serif Display', serif;
+      --font-body: 'DM Sans', sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+
+    [data-theme="dark"] {
+      --bg: #0c0c0f;
+      --bg2: #13131a;
+      --bg3: #1c1c27;
+      --card: #16161f;
+      --card2: #1e1e2e;
+      --border: rgba(255,255,255,0.07);
+      --text: #e8e8f0;
+      --text2: #8888aa;
+      --text3: #555570;
+      --accent: #7c6af7;
+      --accent2: #a855f7;
+      --green: #22d3a5;
+      --red: #f87171;
+      --yellow: #fbbf24;
+      --glow: rgba(124, 106, 247, 0.15);
+      --week-past: #3b3564;
+      --week-current: #7c6af7;
+      --week-future: #1e1e2e;
+    }
+
+    [data-theme="light"] {
+      --bg: #f4f4f8;
+      --bg2: #eaeaf0;
+      --bg3: #e0e0ea;
+      --card: #ffffff;
+      --card2: #f9f9fc;
+      --border: rgba(0,0,0,0.08);
+      --text: #111118;
+      --text2: #555570;
+      --text3: #aaaacc;
+      --accent: #6355e8;
+      --accent2: #9333ea;
+      --green: #059669;
+      --red: #dc2626;
+      --yellow: #d97706;
+      --glow: rgba(99, 85, 232, 0.1);
+      --week-past: #c4bcf7;
+      --week-current: #6355e8;
+      --week-future: #e8e8f0;
+    }
+
+    /* ============================================================
+       RESET & BASE
+    ============================================================ */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: var(--font-body);
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      transition: background var(--transition), color var(--transition);
+      overflow-x: hidden;
+    }
+
+    /* ============================================================
+       SUBTLE BACKGROUND TEXTURE
+    ============================================================ */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 60% 40% at 20% 10%, var(--glow) 0%, transparent 60%),
+        radial-gradient(ellipse 40% 30% at 80% 80%, rgba(168, 85, 247, 0.06) 0%, transparent 60%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ============================================================
+       LAYOUT
+    ============================================================ */
+    .container {
+      max-width: 1300px;
+      margin: 0 auto;
+      padding: 0 24px;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* ============================================================
+       HEADER
+    ============================================================ */
+    header {
+      padding: 28px 0 16px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      background: rgba(0,0,0,0);
+    }
+
+    [data-theme="light"] header { background: rgba(244,244,248,0.8); }
+    [data-theme="dark"] header { background: rgba(12,12,15,0.8); }
+
+    .header-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .logo {
+      font-family: var(--font-display);
+      font-size: 1.6rem;
+      color: var(--text);
+      letter-spacing: -0.02em;
+    }
+
+    .logo span {
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .tagline {
+      font-size: 0.75rem;
+      color: var(--text3);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      font-weight: 500;
+    }
+
+    /* ============================================================
+       THEME TOGGLE
+    ============================================================ */
+    .theme-toggle {
+      width: 44px;
+      height: 24px;
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      cursor: pointer;
+      position: relative;
+      transition: background var(--transition);
+    }
+
+    .theme-toggle::after {
+      content: '';
+      position: absolute;
+      width: 18px;
+      height: 18px;
+      background: var(--accent);
+      border-radius: 50%;
+      top: 2px;
+      left: 2px;
+      transition: transform var(--transition), background var(--transition);
+    }
+
+    [data-theme="light"] .theme-toggle::after { transform: translateX(20px); }
+
+    /* ============================================================
+       NAV PILLS
+    ============================================================ */
+    .nav-pills {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      padding: 12px 0 20px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 36px;
+    }
+
+    .nav-pill {
+      font-family: var(--font-body);
+      font-size: 0.78rem;
+      font-weight: 500;
+      padding: 6px 14px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: var(--card);
+      color: var(--text2);
+      cursor: pointer;
+      transition: all var(--transition);
+      letter-spacing: 0.02em;
+    }
+
+    .nav-pill:hover, .nav-pill.active {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+    }
+
+    /* ============================================================
+       CARDS
+    ============================================================ */
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 28px;
+      transition: transform var(--transition), box-shadow var(--transition), background var(--transition);
+      animation: fadeUp 0.5s ease both;
+    }
+
+    .card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 40px rgba(0,0,0,0.25);
+    }
+
+    [data-theme="light"] .card:hover {
+      box-shadow: 0 12px 40px rgba(0,0,0,0.1);
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 22px;
+    }
+
+    .card-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.1rem;
+      flex-shrink: 0;
+    }
+
+    .card-title {
+      font-family: var(--font-display);
+      font-size: 1.2rem;
+      color: var(--text);
+      letter-spacing: -0.01em;
+    }
+
+    .card-subtitle {
+      font-size: 0.76rem;
+      color: var(--text3);
+      margin-top: 2px;
+      font-weight: 400;
+    }
+
+    /* ============================================================
+       GRID LAYOUT FOR DASHBOARD
+    ============================================================ */
+    .dashboard-grid {
+      display: grid;
+      gap: 20px;
+      margin-bottom: 20px;
+    }
+
+    .grid-2 { grid-template-columns: repeat(2, 1fr); }
+    .grid-3 { grid-template-columns: repeat(3, 1fr); }
+
+    @media (max-width: 900px) {
+      .grid-2, .grid-3 { grid-template-columns: 1fr; }
+    }
+
+    /* ============================================================
+       INPUTS & BUTTONS
+    ============================================================ */
+    .input-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-bottom: 14px;
+    }
+
+    label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--text2);
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    input[type="text"],
+    input[type="number"],
+    input[type="date"],
+    select,
+    textarea {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text);
+      font-family: var(--font-body);
+      font-size: 0.9rem;
+      padding: 10px 14px;
+      width: 100%;
+      outline: none;
+      transition: border-color var(--transition), box-shadow var(--transition);
+    }
+
+    input:focus, select:focus, textarea:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--glow);
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 10px 20px;
+      border-radius: var(--radius-sm);
+      font-family: var(--font-body);
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      transition: all var(--transition);
+      letter-spacing: 0.02em;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      color: #fff;
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(124,106,247,0.4);
+    }
+
+    .btn-ghost {
+      background: var(--bg3);
+      color: var(--text2);
+      border: 1px solid var(--border);
+    }
+
+    .btn-ghost:hover { background: var(--bg2); color: var(--text); }
+
+    .btn-sm { padding: 6px 12px; font-size: 0.78rem; }
+
+    /* ============================================================
+       SECTION LABELS
+    ============================================================ */
+    .section-label {
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 6px;
+    }
+
+    /* ============================================================
+       PILL BADGES
+    ============================================================ */
+    .badge {
+      display: inline-block;
+      padding: 2px 10px;
+      border-radius: 999px;
+      font-size: 0.72rem;
+      font-weight: 600;
+    }
+
+    .badge-accent { background: var(--glow); color: var(--accent); border: 1px solid var(--accent); }
+    .badge-green  { background: rgba(34,211,165,0.1); color: var(--green); }
+    .badge-red    { background: rgba(248,113,113,0.1); color: var(--red); }
+
+    /* ============================================================
+       PROGRESS BAR
+    ============================================================ */
+    .progress-wrap {
+      background: var(--bg3);
+      border-radius: 999px;
+      height: 8px;
+      overflow: hidden;
+    }
+
+    .progress-bar {
+      height: 100%;
+      border-radius: 999px;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      transition: width 0.8s cubic-bezier(0.4,0,0.2,1);
+    }
+
+    /* ============================================================
+       ① LIFE WEEKS GRID
+    ============================================================ */
+    #section-life { margin-bottom: 20px; animation-delay: 0.05s; }
+
+    .life-controls {
+      display: flex;
+      gap: 12px;
+      align-items: flex-end;
+      flex-wrap: wrap;
+      margin-bottom: 20px;
+    }
+
+    .life-controls .input-group { margin-bottom: 0; flex: 1; min-width: 160px; }
+
+    .life-stats {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin-bottom: 18px;
+    }
+
+    .stat-chip {
+      background: var(--bg3);
+      border-radius: var(--radius-sm);
+      padding: 10px 16px;
+      flex: 1;
+      min-width: 100px;
+    }
+
+    .stat-chip .val {
+      font-family: var(--font-mono);
+      font-size: 1.3rem;
+      font-weight: 500;
+      color: var(--accent);
+    }
+
+    .stat-chip .lbl {
+      font-size: 0.7rem;
+      color: var(--text3);
+      margin-top: 2px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    #weeks-grid-container {
+      overflow-x: auto;
+      padding-bottom: 8px;
+    }
+
+    #weeks-grid {
+      display: grid;
+      grid-template-columns: repeat(52, 1fr);
+      gap: 2px;
+      min-width: 520px;
+    }
+
+    .week-cell {
+      aspect-ratio: 1;
+      border-radius: 2px;
+      background: var(--week-future);
+      transition: background var(--transition), transform 0.15s;
+      cursor: default;
+      position: relative;
+    }
+
+    .week-cell:hover { transform: scale(1.6); z-index: 10; }
+    .week-cell.past   { background: var(--week-past); }
+    .week-cell.current {
+      background: var(--week-current);
+      box-shadow: 0 0 6px var(--accent);
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: 0.6; }
+    }
+
+    /* Legend */
+    .grid-legend {
+      display: flex;
+      gap: 16px;
+      margin-top: 14px;
+      flex-wrap: wrap;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.75rem;
+      color: var(--text2);
+    }
+
+    .legend-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 3px;
+    }
+
+    /* ============================================================
+       ② AI STUDY PLANNER
+    ============================================================ */
+    #section-study { animation-delay: 0.1s; }
+
+    .study-inputs { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    @media (max-width: 600px) { .study-inputs { grid-template-columns: 1fr; } }
+
+    #study-plan-output { margin-top: 18px; }
+
+    .study-day-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+      animation: fadeUp 0.3s ease both;
+    }
+
+    .study-day-row:last-child { border-bottom: none; }
+
+    .day-date {
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      color: var(--text3);
+      min-width: 70px;
+      padding-top: 2px;
+    }
+
+    .day-tasks { flex: 1; display: flex; flex-wrap: wrap; gap: 6px; }
+
+    .task-pill {
+      background: var(--bg3);
+      border-radius: 6px;
+      padding: 4px 10px;
+      font-size: 0.76rem;
+      color: var(--text2);
+      border-left: 3px solid var(--accent);
+    }
+
+    .task-pill.alt { border-left-color: var(--accent2); }
+    .task-pill.alt2 { border-left-color: var(--green); }
+
+    .study-empty {
+      text-align: center;
+      padding: 30px;
+      color: var(--text3);
+      font-size: 0.85rem;
+    }
+
+    /* ============================================================
+       ③ HABIT TRACKER
+    ============================================================ */
+    #section-habits { animation-delay: 0.15s; }
+
+    .habit-add-row {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 18px;
+    }
+
+    .habit-add-row input { flex: 1; }
+
+    .habit-list { display: flex; flex-direction: column; gap: 10px; }
+
+    .habit-row {
+      background: var(--bg2);
+      border-radius: var(--radius-sm);
+      padding: 12px 14px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      animation: fadeUp 0.25s ease both;
+      border: 1px solid var(--border);
+    }
+
+    .habit-name {
+      flex: 1;
+      font-size: 0.88rem;
+      font-weight: 500;
+    }
+
+    .habit-checks {
+      display: flex;
+      gap: 4px;
+    }
+
+    .hcheck {
+      width: 22px;
+      height: 22px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: var(--bg3);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.7rem;
+      transition: all 0.2s;
+      flex-shrink: 0;
+    }
+
+    .hcheck.done {
+      background: var(--green);
+      border-color: var(--green);
+      color: #fff;
+    }
+
+    .streak-badge {
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      color: var(--yellow);
+      background: rgba(251,191,36,0.1);
+      padding: 2px 8px;
+      border-radius: 999px;
+      white-space: nowrap;
+    }
+
+    .habit-delete {
+      color: var(--text3);
+      cursor: pointer;
+      font-size: 1rem;
+      border: none;
+      background: none;
+      padding: 2px 4px;
+      transition: color 0.2s;
+    }
+
+    .habit-delete:hover { color: var(--red); }
+
+    .day-label-row {
+      display: flex;
+      gap: 4px;
+      margin-left: auto;
+      margin-right: 12px;
+    }
+
+    .day-lbl {
+      width: 22px;
+      font-size: 0.6rem;
+      text-align: center;
+      color: var(--text3);
+    }
+
+    /* ============================================================
+       ④ WEALTH CALCULATOR
+    ============================================================ */
+    #section-wealth { animation-delay: 0.2s; }
+
+    .wealth-inputs { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    @media (max-width: 600px) { .wealth-inputs { grid-template-columns: 1fr; } }
+
+    .wealth-result {
+      margin-top: 20px;
+      background: var(--bg2);
+      border-radius: var(--radius-sm);
+      padding: 18px;
+      border: 1px solid var(--border);
+      display: none;
+    }
+
+    .wealth-result.show { display: block; }
+
+    .wealth-number {
+      font-family: var(--font-display);
+      font-size: 2.4rem;
+      letter-spacing: -0.02em;
+      background: linear-gradient(135deg, var(--accent), var(--green));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .wealth-meta {
+      font-size: 0.78rem;
+      color: var(--text3);
+      margin-top: 4px;
+    }
+
+    /* Chart */
+    .wealth-chart {
+      margin-top: 16px;
+      height: 120px;
+      position: relative;
+    }
+
+    .wealth-chart canvas { width: 100% !important; height: 120px !important; }
+
+    /* Milestones */
+    .milestones {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: 16px;
+    }
+
+    .milestone-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 0.8rem;
+    }
+
+    .milestone-row .m-year {
+      font-family: var(--font-mono);
+      color: var(--text3);
+      min-width: 45px;
+      font-size: 0.72rem;
+    }
+
+    .milestone-row .m-val { color: var(--text2); min-width: 80px; font-size: 0.78rem; }
+    .milestone-row .progress-wrap { flex: 1; }
+
+    /* ============================================================
+       ⑤ PRODUCTIVITY DASHBOARD
+    ============================================================ */
+    #section-productivity { animation-delay: 0.25s; }
+
+    /* Pomodoro */
+    .pomodoro-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .pomo-ring {
+      width: 140px;
+      height: 140px;
+      position: relative;
+    }
+
+    .pomo-ring svg {
+      width: 140px;
+      height: 140px;
+      transform: rotate(-90deg);
+    }
+
+    .pomo-ring circle {
+      fill: none;
+      stroke-width: 8;
+    }
+
+    .pomo-ring .track { stroke: var(--bg3); }
+    .pomo-ring .progress-arc {
+      stroke: var(--accent);
+      stroke-linecap: round;
+      transition: stroke-dashoffset 1s linear;
+    }
+
+    .pomo-time {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .pomo-time .t {
+      font-family: var(--font-mono);
+      font-size: 1.8rem;
+      font-weight: 500;
+      color: var(--text);
+      letter-spacing: 0.02em;
+    }
+
+    .pomo-time .mode-label {
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text3);
+    }
+
+    .pomo-controls { display: flex; gap: 8px; }
+
+    /* Quote */
+    .quote-wrap {
+      background: var(--bg2);
+      border-radius: var(--radius-sm);
+      padding: 18px;
+      border-left: 3px solid var(--accent);
+      position: relative;
+    }
+
+    .quote-text {
+      font-family: var(--font-display);
+      font-style: italic;
+      font-size: 1rem;
+      line-height: 1.6;
+      color: var(--text);
+    }
+
+    .quote-author {
+      margin-top: 8px;
+      font-size: 0.75rem;
+      color: var(--text3);
+      font-weight: 500;
+    }
+
+    /* Task List */
+    .task-input-row {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .task-input-row input { flex: 1; }
+
+    .task-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 9px 0;
+      border-bottom: 1px solid var(--border);
+      animation: fadeUp 0.2s ease both;
+    }
+
+    .task-item:last-child { border-bottom: none; }
+
+    .task-check {
+      width: 20px;
+      height: 20px;
+      border-radius: 6px;
+      border: 2px solid var(--border);
+      cursor: pointer;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+    }
+
+    .task-check.done {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+    }
+
+    .task-text {
+      flex: 1;
+      font-size: 0.88rem;
+    }
+
+    .task-text.done { text-decoration: line-through; color: var(--text3); }
+
+    .task-del {
+      color: var(--text3);
+      cursor: pointer;
+      font-size: 0.9rem;
+      border: none;
+      background: none;
+      padding: 0 4px;
+      transition: color 0.2s;
+    }
+
+    .task-del:hover { color: var(--red); }
+
+    /* Overall progress */
+    .habit-progress-section { margin-top: 10px; }
+    .habit-progress-row {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .hp-item { display: flex; flex-direction: column; gap: 4px; }
+    .hp-top { display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--text2); }
+
+    /* ============================================================
+       FOOTER
+    ============================================================ */
+    footer {
+      text-align: center;
+      padding: 40px 0 30px;
+      color: var(--text3);
+      font-size: 0.75rem;
+      letter-spacing: 0.04em;
+      border-top: 1px solid var(--border);
+      margin-top: 40px;
+    }
+
+    /* ============================================================
+       SCROLLBAR
+    ============================================================ */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--bg3); border-radius: 999px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--text3); }
+
+    /* ============================================================
+       ⑥ IPHONE WALLPAPER GENERATOR
+    ============================================================ */
+    #section-wallpaper { animation-delay: 0.3s; }
+
+    .wp-layout {
+      display: grid;
+      grid-template-columns: 1fr 320px;
+      gap: 24px;
+      align-items: start;
+    }
+    @media (max-width: 860px) { .wp-layout { grid-template-columns: 1fr; } }
+
+    .wp-controls { display: flex; flex-direction: column; gap: 14px; }
+
+    .wp-model-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-bottom: 4px;
+    }
+
+    .model-btn {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 8px 6px;
+      text-align: center;
+      cursor: pointer;
+      font-family: var(--font-body);
+      font-size: 0.7rem;
+      color: var(--text2);
+      transition: all var(--transition);
+      line-height: 1.4;
+    }
+    .model-btn:hover { border-color: var(--accent); color: var(--text); }
+    .model-btn.selected { background: var(--accent); color: #fff; border-color: var(--accent); }
+    .model-btn .m-name { font-weight: 600; font-size: 0.72rem; }
+    .model-btn .m-res  { font-size: 0.62rem; opacity: 0.8; }
+
+    /* Style picker */
+    .style-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+
+    .style-btn {
+      border-radius: 10px;
+      height: 56px;
+      cursor: pointer;
+      border: 2px solid transparent;
+      transition: all 0.2s;
+      position: relative;
+      overflow: hidden;
+    }
+    .style-btn.selected { border-color: var(--accent); box-shadow: 0 0 0 3px var(--glow); }
+    .style-btn .style-label {
+      position: absolute;
+      bottom: 4px;
+      left: 0; right: 0;
+      text-align: center;
+      font-size: 0.6rem;
+      font-weight: 600;
+      color: rgba(255,255,255,0.9);
+      text-shadow: 0 1px 3px rgba(0,0,0,0.8);
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    /* Phone preview */
+    .phone-preview-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .phone-shell {
+      position: relative;
+      width: 200px;
+    }
+
+    .phone-shell svg { width: 100%; }
+
+    .phone-screen-canvas {
+      position: absolute;
+      border-radius: 28px;
+      overflow: hidden;
+    }
+
+    #wallpaper-canvas {
+      display: block;
+      border-radius: 4px;
+    }
+
+    .wp-download-wrap {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      width: 100%;
+    }
+
+    /* Shortcut guide — clean card style */
+    .shortcut-guide {
+      background: var(--card2);
+      border-radius: 16px;
+      border: 1px solid var(--border);
+      overflow: hidden;
+      margin-top: 8px;
+    }
+
+    .guide-steps {
+      padding: 8px 0 4px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .guide-step {
+      display: flex;
+      gap: 16px;
+      align-items: flex-start;
+      padding: 18px 22px;
+      border-bottom: 1px solid var(--border);
+      transition: background 0.2s;
+    }
+
+    .guide-step:last-of-type { border-bottom: none; }
+    .guide-step:hover { background: var(--bg3); }
+
+    .step-num {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: var(--text);
+      color: var(--bg);
+      font-size: 0.85rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    .step-content { flex: 1; }
+    .step-content .step-title {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 6px;
+      line-height: 1.3;
+    }
+
+    .step-content .step-desc {
+      font-size: 0.82rem;
+      color: var(--text2);
+      line-height: 1.6;
+    }
+
+    .step-content .step-desc strong { color: var(--text); }
+    .step-content .step-desc em { font-style: normal; font-weight: 600; color: var(--text); }
+
+    /* Sub-steps like 3.1 / 3.2 */
+    .sub-steps { display: flex; flex-direction: column; gap: 5px; margin-top: 8px; }
+    .sub-step {
+      font-size: 0.82rem;
+      color: var(--text2);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      line-height: 1.5;
+    }
+    .sub-step .sub-num { color: var(--text3); font-weight: 600; min-width: 22px; }
+    .sub-step strong { color: var(--text); }
+
+    /* URL copy box */
+    .url-copy-box {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      margin-top: 10px;
+      overflow: hidden;
+    }
+
+    .url-copy-box .url-text {
+      flex: 1;
+      padding: 10px 14px;
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      color: var(--text2);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      background: none;
+      border: none;
+      outline: none;
+      cursor: text;
+    }
+
+    .url-copy-btn {
+      padding: 10px 14px;
+      background: var(--bg3);
+      border: none;
+      border-left: 1px solid var(--border);
+      cursor: pointer;
+      color: var(--text2);
+      font-size: 1rem;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .url-copy-btn:hover { background: var(--accent); color: #fff; }
+
+    /* Important warning box */
+    .guide-warning {
+      margin: 0 18px 18px;
+      background: #7c3a0f;
+      border-radius: 12px;
+      padding: 14px 16px;
+      border: 1px solid #a0501a;
+    }
+
+    [data-theme="light"] .guide-warning {
+      background: #fff3e0;
+      border-color: #f59e0b;
+    }
+
+    .guide-warning .warn-title {
+      font-size: 0.84rem;
+      font-weight: 700;
+      color: #fbbf24;
+      margin-bottom: 5px;
+    }
+
+    [data-theme="light"] .guide-warning .warn-title { color: #92400e; }
+
+    .guide-warning .warn-body {
+      font-size: 0.78rem;
+      color: #fde68a;
+      line-height: 1.55;
+    }
+
+    [data-theme="light"] .guide-warning .warn-body { color: #78350f; }
+
+    .guide-warning .warn-sub {
+      font-size: 0.72rem;
+      color: #f59e0b;
+      margin-top: 5px;
+      opacity: 0.9;
+    }
+
+    [data-theme="light"] .guide-warning .warn-sub { color: #b45309; }
+
+    .ios-tip {
+      background: rgba(124,106,247,0.08);
+      border: 1px solid rgba(124,106,247,0.2);
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 0.76rem;
+      color: var(--text2);
+      line-height: 1.5;
+      margin: 0 18px 10px;
+    }
+
+    /* ============================================================
+       UTILITY
+    ============================================================ */
+    .flex { display: flex; }
+    .flex-wrap { flex-wrap: wrap; }
+    .items-center { align-items: center; }
+    .justify-between { justify-content: space-between; }
+    .gap-8 { gap: 8px; }
+    .gap-12 { gap: 12px; }
+    .mt-8  { margin-top: 8px; }
+    .mt-12 { margin-top: 12px; }
+    .mt-16 { margin-top: 16px; }
+    .text-sm { font-size: 0.8rem; }
+    .text-xs { font-size: 0.72rem; }
+    .text-muted { color: var(--text2); }
+    .text-dim { color: var(--text3); }
+    .font-mono { font-family: var(--font-mono); }
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+
+<!-- ============================================================
+     HEADER
+============================================================ -->
+<header>
+  <div class="container">
+    <div class="header-inner">
+      <div>
+        <div class="logo">LifeOS <span>Dashboard</span></div>
+      </div>
+      <div class="header-right">
+        <span class="tagline">Your life, visualised</span>
+        <button class="theme-toggle" id="themeToggle" title="Toggle theme" aria-label="Toggle dark/light mode"></button>
+      </div>
+    </div>
+
+    <!-- Navigation pills -->
+    <nav class="nav-pills" role="navigation" aria-label="Dashboard sections">
+      <button class="nav-pill active" onclick="scrollTo('section-wallpaper')">📱 iPhone Wallpaper</button>
+      <button class="nav-pill" onclick="scrollTo('section-life')">🗓 Life Grid</button>
+      <button class="nav-pill" onclick="scrollTo('section-study')">📚 Study Planner</button>
+      <button class="nav-pill" onclick="scrollTo('section-habits')">✅ Habit Tracker</button>
+      <button class="nav-pill" onclick="scrollTo('section-wealth')">💰 Wealth Calc</button>
+      <button class="nav-pill" onclick="scrollTo('section-productivity')">⚡ Productivity</button>
+    </nav>
+  </div>
+</header>
+
+<!-- ============================================================
+     MAIN CONTENT
+============================================================ -->
+<main class="container">
+
+  <!-- ① IPHONE WALLPAPER GENERATOR -->
+  <section id="section-wallpaper" style="margin-bottom:20px;">
+    <div class="card">
+      <div class="card-header">
+        <div class="card-icon" style="background:rgba(34,211,165,0.15);">📱</div>
+        <div>
+          <div class="card-title">iPhone Life Weeks Wallpaper</div>
+          <div class="card-subtitle">Generate a custom wallpaper that updates every week via Shortcuts</div>
+        </div>
+      </div>
+
+      <div class="wp-layout">
+        <!-- LEFT: Controls -->
+        <div class="wp-controls">
+
+          <!-- iPhone Model Picker -->
+          <div>
+            <label style="margin-bottom:8px;display:block;">iPhone Model</label>
+            <div class="wp-model-grid" id="model-grid"></div>
+          </div>
+
+          <!-- DOB (reuse or enter fresh) -->
+          <div class="input-group" style="margin-bottom:0">
+            <label for="wp-dob">Your Date of Birth</label>
+            <input type="date" id="wp-dob" />
+          </div>
+
+          <div class="input-group" style="margin-bottom:0">
+            <label for="wp-lifespan">Expected Lifespan (years)</label>
+            <input type="number" id="wp-lifespan" value="80" min="1" max="120" />
+          </div>
+
+          <!-- Custom Text -->
+          <div class="input-group" style="margin-bottom:0">
+            <label for="wp-name">Your Name / Quote (optional)</label>
+            <input type="text" id="wp-name" placeholder="e.g. Royal's Life · Make it count" maxlength="40" />
+          </div>
+
+          <!-- Style picker -->
+          <div>
+            <label style="margin-bottom:8px;display:block;">Wallpaper Style</label>
+            <div class="style-grid" id="style-grid"></div>
+          </div>
+
+          <!-- Accent colour -->
+          <div class="flex gap-12 items-center">
+            <div class="input-group" style="margin-bottom:0;flex:1">
+              <label for="wp-color1">Accent Color 1</label>
+              <input type="color" id="wp-color1" value="#7c6af7" style="height:42px;padding:4px 6px;cursor:pointer;" />
+            </div>
+            <div class="input-group" style="margin-bottom:0;flex:1">
+              <label for="wp-color2">Accent Color 2</label>
+              <input type="color" id="wp-color2" value="#a855f7" style="height:42px;padding:4px 6px;cursor:pointer;" />
+            </div>
+          </div>
+
+          <button class="btn btn-primary" onclick="generateWallpaper()">✨ Generate Wallpaper</button>
+
+          <!-- Stats preview -->
+          <div id="wp-stats-row" style="display:none;" class="flex gap-8 flex-wrap">
+            <span class="badge badge-accent" id="wp-stat-weeks"></span>
+            <span class="badge badge-green" id="wp-stat-pct"></span>
+            <span class="badge" style="background:var(--bg3);color:var(--text2);" id="wp-stat-left"></span>
+          </div>
+        </div>
+
+        <!-- RIGHT: Preview + Download -->
+        <div class="phone-preview-wrap">
+          <div class="section-label">Live Preview</div>
+
+          <!-- Phone shell SVG frame -->
+          <div class="phone-shell" id="phone-shell-wrap">
+            <svg viewBox="0 0 220 440" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect x="4" y="4" width="212" height="432" rx="36" fill="#1a1a1a" stroke="#333" stroke-width="2"/>
+              <rect x="12" y="12" width="196" height="416" rx="28" fill="#000"/>
+              <rect x="76" y="20" width="68" height="20" rx="10" fill="#1a1a1a"/>
+              <rect x="0" y="100" width="4" height="40" rx="2" fill="#333"/>
+              <rect x="0" y="150" width="4" height="40" rx="2" fill="#333"/>
+              <rect x="216" y="120" width="4" height="60" rx="2" fill="#333"/>
+            </svg>
+            <canvas id="wp-preview-canvas"
+              style="position:absolute;top:12px;left:12px;width:196px;height:416px;border-radius:28px;object-fit:cover;">
+            </canvas>
+          </div>
+
+          <!-- Hidden full-res canvas -->
+          <canvas id="wallpaper-canvas" style="display:none;"></canvas>
+
+          <div class="wp-download-wrap">
+            <button class="btn btn-primary" onclick="downloadWallpaper()" id="dl-btn" style="width:100%;opacity:0.4;pointer-events:none;">
+              ⬇ Download Wallpaper
+            </button>
+            <div class="text-xs text-dim" style="text-align:center;" id="wp-res-label">Select model and generate first</div>
+          </div>
+
+          <div id="wp-big-stat" style="display:none;text-align:center;">
+            <div style="font-family:var(--font-mono);font-size:2rem;color:var(--accent)" id="wp-big-num">—</div>
+            <div class="text-xs text-dim">weeks remaining</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Shortcut Guide -->
+      <div style="margin-top:28px;">
+        <div class="section-label" style="margin-bottom:12px;">📲 How to Auto-Update Every Week with iPhone Shortcuts</div>
+
+        <div class="shortcut-guide">
+          <div class="guide-steps">
+
+            <!-- Step 1 -->
+            <div class="guide-step">
+              <div class="step-num">1</div>
+              <div class="step-content">
+                <div class="step-title">Copy your wallpaper URL</div>
+                <div class="url-copy-box">
+                  <input class="url-text" id="wp-url-field" readonly value="⬆ Generate your wallpaper first, then copy this link" />
+                  <button class="url-copy-btn" onclick="copyWpUrl()" title="Copy URL" style="opacity:0.4;">⧉</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Step 2 -->
+            <div class="guide-step">
+              <div class="step-num">2</div>
+              <div class="step-content">
+                <div class="step-title">Create Automation</div>
+                <div class="step-desc">
+                  Open <strong>Shortcuts</strong> app → <strong>Automation</strong> tab → <strong>New Automation</strong>
+                  → <strong>Time of Day</strong> → 6:00 AM → Repeat <strong>"Daily"</strong> → Select <strong>"Run Immediately"</strong> → <strong>"Create New Shortcut"</strong>
+                </div>
+              </div>
+            </div>
+
+            <!-- Step 3 -->
+            <div class="guide-step">
+              <div class="step-num">3</div>
+              <div class="step-content">
+                <div class="step-title">Add these actions</div>
+                <div class="sub-steps">
+                  <div class="sub-step">
+                    <span class="sub-num">3.1</span>
+                    <span><strong>"Get Contents of URL"</strong> → paste the URL from step 1</span>
+                  </div>
+                  <div class="sub-step">
+                    <span class="sub-num">3.2</span>
+                    <span><strong>"Set Wallpaper Photo"</strong> → choose "Lock Screen"</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Important warning box -->
+          <div class="guide-warning">
+            <div class="warn-title">⚠ Important:</div>
+            <div class="warn-body">
+              In <strong>"Set Wallpaper Photo"</strong>, tap the arrow (→) to show options → disable both <strong>"Crop to Subject"</strong> and <strong>"Show Preview"</strong>
+            </div>
+            <div class="warn-sub">This prevents iOS from cropping and asking for confirmation each time</div>
+          </div>
+
+          <!-- Extra tips -->
+          <div class="ios-tip">
+            💡 <strong>Pro tip:</strong> On <strong>iOS 16+</strong>, go to <strong>Settings → Wallpaper → Customise</strong> to also add a Lock Screen Widget showing your weeks remaining using <strong>Widgetsmith</strong> or <strong>Data Jar</strong> — no wallpaper swap needed.
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ② LIFE WEEKS GRID -->
+  <section id="section-life">
+    <div class="card">
+      <div class="card-header">
+        <div class="card-icon" style="background:rgba(124,106,247,0.15);">🗓</div>
+        <div>
+          <div class="card-title">Life in Weeks</div>
+          <div class="card-subtitle">4,160 squares · 52 weeks per row · one human life</div>
+        </div>
+      </div>
+
+      <!-- Controls -->
+      <div class="life-controls">
+        <div class="input-group">
+          <label for="dob-input">Date of Birth</label>
+          <input type="date" id="dob-input" />
+        </div>
+        <div class="input-group">
+          <label for="lifespan-input">Expected Lifespan (years)</label>
+          <input type="number" id="lifespan-input" value="80" min="1" max="120" />
+        </div>
+        <button class="btn btn-primary" onclick="renderLifeGrid()">Visualise</button>
+      </div>
+
+      <!-- Stats chips -->
+      <div class="life-stats">
+        <div class="stat-chip">
+          <div class="val" id="stat-weeks-lived">—</div>
+          <div class="lbl">Weeks Lived</div>
+        </div>
+        <div class="stat-chip">
+          <div class="val" id="stat-weeks-left">—</div>
+          <div class="lbl">Weeks Left</div>
+        </div>
+        <div class="stat-chip">
+          <div class="val" id="stat-percent">—</div>
+          <div class="lbl">Life Completed</div>
+        </div>
+        <div class="stat-chip">
+          <div class="val" id="stat-years-left">—</div>
+          <div class="lbl">Years Remaining</div>
+        </div>
+      </div>
+
+      <!-- Progress bar -->
+      <div class="progress-wrap" style="margin-bottom:18px;">
+        <div class="progress-bar" id="life-progress-bar" style="width:0%"></div>
+      </div>
+
+      <!-- The grid -->
+      <div id="weeks-grid-container">
+        <div id="weeks-grid"></div>
+      </div>
+
+      <!-- Legend -->
+      <div class="grid-legend">
+        <div class="legend-item">
+          <div class="legend-dot" style="background:var(--week-past)"></div>
+          Past weeks
+        </div>
+        <div class="legend-item">
+          <div class="legend-dot" style="background:var(--week-current);box-shadow:0 0 6px var(--accent)"></div>
+          Current week
+        </div>
+        <div class="legend-item">
+          <div class="legend-dot" style="background:var(--week-future);border:1px solid var(--border)"></div>
+          Future weeks
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ② AI STUDY PLANNER -->
+  <section id="section-study" style="margin-top:20px;">
+    <div class="card">
+      <div class="card-header">
+        <div class="card-icon" style="background:rgba(168,85,247,0.15);">📚</div>
+        <div>
+          <div class="card-title">AI Study Planner</div>
+          <div class="card-subtitle">Auto-generate a balanced revision schedule</div>
+        </div>
+      </div>
+
+      <div class="study-inputs">
+        <div class="input-group">
+          <label for="study-subjects">Subjects (comma-separated)</label>
+          <input type="text" id="study-subjects" placeholder="e.g. Maths, Physics, History" />
+        </div>
+        <div class="input-group">
+          <label for="study-exam-date">Exam / Deadline Date</label>
+          <input type="date" id="study-exam-date" />
+        </div>
+        <div class="input-group">
+          <label for="study-hours">Study Hours Per Day</label>
+          <input type="number" id="study-hours" value="3" min="1" max="12" />
+        </div>
+        <div class="input-group">
+          <label for="study-start">Start From</label>
+          <input type="date" id="study-start" />
+        </div>
+      </div>
+
+      <button class="btn btn-primary" onclick="generateStudyPlan()">Generate Plan</button>
+
+      <div id="study-plan-output">
+        <div class="study-empty">Enter your subjects and dates above, then hit Generate Plan ✨</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ③ HABIT TRACKER + ④ WEALTH CALCULATOR (side by side) -->
+  <div class="dashboard-grid grid-2" style="margin-top:20px;">
+
+    <!-- ③ HABIT TRACKER -->
+    <section id="section-habits">
+      <div class="card" style="height:100%">
+        <div class="card-header">
+          <div class="card-icon" style="background:rgba(34,211,165,0.15);">✅</div>
+          <div>
+            <div class="card-title">Habit Tracker</div>
+            <div class="card-subtitle">Build streaks · 7-day view</div>
+          </div>
+        </div>
+
+        <!-- Add habit -->
+        <div class="habit-add-row">
+          <input type="text" id="habit-input" placeholder="New habit (e.g. Exercise, Read)" onkeydown="if(event.key==='Enter')addHabit()" />
+          <button class="btn btn-primary" onclick="addHabit()">+ Add</button>
+        </div>
+
+        <!-- Day labels row (aligned above habit checks) -->
+        <div class="flex justify-between items-center text-xs text-dim" style="padding:0 0 8px 0;">
+          <span style="opacity:0">pad</span>
+          <div id="day-labels-row" class="flex gap-8"></div>
+          <span style="opacity:0">x</span>
+        </div>
+
+        <!-- Habit list -->
+        <div class="habit-list" id="habit-list">
+          <div class="text-sm text-dim" style="padding:20px;text-align:center;">Add your first habit to get started 🌱</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ④ WEALTH CALCULATOR -->
+    <section id="section-wealth">
+      <div class="card" style="height:100%">
+        <div class="card-header">
+          <div class="card-icon" style="background:rgba(251,191,36,0.15);">💰</div>
+          <div>
+            <div class="card-title">Wealth Calculator</div>
+            <div class="card-subtitle">How rich will you be at retirement?</div>
+          </div>
+        </div>
+
+        <div class="wealth-inputs">
+          <div class="input-group">
+            <label for="w-age">Current Age</label>
+            <input type="number" id="w-age" value="25" min="1" max="80" />
+          </div>
+          <div class="input-group">
+            <label for="w-retire">Retirement Age</label>
+            <input type="number" id="w-retire" value="60" min="1" max="100" />
+          </div>
+          <div class="input-group">
+            <label for="w-monthly">Monthly Investment (₹ or $)</label>
+            <input type="number" id="w-monthly" value="10000" min="0" />
+          </div>
+          <div class="input-group">
+            <label for="w-return">Expected Annual Return (%)</label>
+            <input type="number" id="w-return" value="12" min="0" max="50" step="0.5" />
+          </div>
+        </div>
+
+        <button class="btn btn-primary" onclick="calculateWealth()">Calculate Wealth</button>
+
+        <div class="wealth-result" id="wealth-result">
+          <div class="wealth-number" id="w-total">—</div>
+          <div class="wealth-meta" id="w-meta">—</div>
+          <div class="wealth-chart">
+            <canvas id="wealth-canvas"></canvas>
+          </div>
+          <div class="milestones" id="wealth-milestones"></div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- ⑤ PRODUCTIVITY DASHBOARD -->
+  <section id="section-productivity" style="margin-top:20px;margin-bottom:20px;">
+    <div class="card">
+      <div class="card-header">
+        <div class="card-icon" style="background:rgba(248,113,113,0.15);">⚡</div>
+        <div>
+          <div class="card-title">Productivity Dashboard</div>
+          <div class="card-subtitle">Pomodoro · Task List · Daily Quote · Progress</div>
+        </div>
+      </div>
+
+      <div class="dashboard-grid grid-3">
+
+        <!-- Pomodoro Timer -->
+        <div style="display:flex;flex-direction:column;align-items:center;gap:14px;">
+          <div class="section-label">Focus Timer</div>
+          <div class="pomodoro-wrap">
+            <div class="pomo-ring" id="pomoRing">
+              <svg viewBox="0 0 140 140">
+                <circle class="track" cx="70" cy="70" r="58"/>
+                <circle class="progress-arc" id="pomoArc" cx="70" cy="70" r="58"
+                  stroke-dasharray="364.4"
+                  stroke-dashoffset="0"/>
+              </svg>
+              <div class="pomo-time">
+                <div class="t" id="pomoDisplay">25:00</div>
+                <div class="mode-label" id="pomoMode">Focus</div>
+              </div>
+            </div>
+            <div class="pomo-controls">
+              <button class="btn btn-primary btn-sm" id="pomoStartBtn" onclick="togglePomodoro()">▶ Start</button>
+              <button class="btn btn-ghost btn-sm" onclick="resetPomodoro()">↺ Reset</button>
+              <button class="btn btn-ghost btn-sm" onclick="skipPomodoro()">⏭ Skip</button>
+            </div>
+            <div class="flex gap-8">
+              <span class="badge badge-accent" id="pomo-count">🍅 0 sessions</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Task List -->
+        <div>
+          <div class="section-label">Today's Tasks</div>
+          <div class="task-input-row">
+            <input type="text" id="task-input" placeholder="Add a task..." onkeydown="if(event.key==='Enter')addTask()" />
+            <button class="btn btn-primary btn-sm" onclick="addTask()">+</button>
+          </div>
+          <div id="task-list"></div>
+          <div class="flex justify-between text-xs text-dim mt-8">
+            <span id="task-count">0 tasks</span>
+            <button class="btn btn-ghost btn-sm" onclick="clearDoneTasks()">Clear done</button>
+          </div>
+        </div>
+
+        <!-- Quote + Progress -->
+        <div style="display:flex;flex-direction:column;gap:16px;">
+          <div>
+            <div class="section-label">Daily Quote</div>
+            <div class="quote-wrap" id="quoteWrap">
+              <div class="quote-text" id="quoteText">Loading…</div>
+              <div class="quote-author" id="quoteAuthor"></div>
+            </div>
+            <button class="btn btn-ghost btn-sm mt-8" onclick="showQuote()">New Quote ↻</button>
+          </div>
+
+          <div>
+            <div class="section-label">Habit Progress Today</div>
+            <div class="habit-progress-row" id="habit-progress-section">
+              <div class="text-sm text-dim">No habits tracked yet.</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+
+
+</main>
+
+<!-- FOOTER -->
+<footer>
+  <div class="container">
+    LifeOS Dashboard · Built with ❤️ by Royal · No data leaves your browser
+  </div>
+</footer>
+
+<!-- ============================================================
+     JAVASCRIPT
+============================================================ -->
+<script>
+/* ============================================================
+   THEME TOGGLE
+============================================================ */
+const themeToggle = document.getElementById('themeToggle');
+let currentTheme = localStorage.getItem('lifeos-theme') || 'dark';
+document.documentElement.setAttribute('data-theme', currentTheme);
+
+themeToggle.addEventListener('click', () => {
+  currentTheme = currentTheme === 'dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', currentTheme);
+  localStorage.setItem('lifeos-theme', currentTheme);
+  // Re-render wealth chart if visible
+  if (document.getElementById('wealth-result').classList.contains('show')) {
+    calculateWealth();
+  }
+});
+
+/* ============================================================
+   SMOOTH SCROLL TO SECTION
+============================================================ */
+function scrollTo(id) {
+  document.getElementById(id).scrollIntoView({ behavior: 'smooth', block: 'start' });
+  // Update active nav pill
+  document.querySelectorAll('.nav-pill').forEach(p => p.classList.remove('active'));
+  event.target.classList.add('active');
+}
+
+/* ============================================================
+   ① LIFE WEEKS GRID
+============================================================ */
+function renderLifeGrid() {
+  const dobInput = document.getElementById('dob-input').value;
+  const lifespan = parseInt(document.getElementById('lifespan-input').value) || 80;
+
+  if (!dobInput) {
+    alert('Please enter your date of birth.');
+    return;
+  }
+
+  const dob = new Date(dobInput);
+  const now = new Date();
+  const totalWeeks = lifespan * 52;
+
+  // Calculate weeks lived
+  const msPerWeek = 7 * 24 * 60 * 60 * 1000;
+  const msLived = now - dob;
+  const weeksLived = Math.floor(msLived / msPerWeek);
+  const weeksLeft = Math.max(0, totalWeeks - weeksLived - 1);
+  const percent = Math.min(100, ((weeksLived / totalWeeks) * 100)).toFixed(1);
+  const yearsLeft = Math.max(0, (weeksLeft / 52)).toFixed(1);
+
+  // Update stats
+  document.getElementById('stat-weeks-lived').textContent = weeksLived.toLocaleString();
+  document.getElementById('stat-weeks-left').textContent = weeksLeft.toLocaleString();
+  document.getElementById('stat-percent').textContent = percent + '%';
+  document.getElementById('stat-years-left').textContent = yearsLeft;
+  document.getElementById('life-progress-bar').style.width = percent + '%';
+
+  // Build grid
+  const grid = document.getElementById('weeks-grid');
+  grid.innerHTML = '';
+
+  for (let i = 0; i < totalWeeks; i++) {
+    const cell = document.createElement('div');
+    cell.className = 'week-cell';
+
+    if (i < weeksLived) {
+      cell.classList.add('past');
+    } else if (i === weeksLived) {
+      cell.classList.add('current');
+    }
+
+    // Tooltip: approximate year
+    const weekYear = new Date(dob.getTime() + i * msPerWeek);
+    const age = Math.floor(i / 52);
+    cell.title = `Age ${age} · Week ${(i % 52) + 1}`;
+
+    grid.appendChild(cell);
+  }
+}
+
+/* ============================================================
+   ② STUDY PLANNER
+============================================================ */
+function generateStudyPlan() {
+  const subjectsRaw = document.getElementById('study-subjects').value.trim();
+  const examDate    = document.getElementById('study-exam-date').value;
+  const hours       = parseInt(document.getElementById('study-hours').value) || 3;
+  const startRaw    = document.getElementById('study-start').value;
+
+  if (!subjectsRaw || !examDate) {
+    alert('Please enter subjects and exam date.');
+    return;
+  }
+
+  const subjects = subjectsRaw.split(',').map(s => s.trim()).filter(Boolean);
+  const start = startRaw ? new Date(startRaw) : new Date();
+  const end   = new Date(examDate);
+
+  if (end <= start) {
+    alert('Exam date must be after start date.');
+    return;
+  }
+
+  const dayMs = 24 * 60 * 60 * 1000;
+  const totalDays = Math.floor((end - start) / dayMs);
+
+  // Alternate subjects each day, rotate through subjects
+  const output = document.getElementById('study-plan-output');
+  const colors = ['', 'alt', 'alt2'];
+  let html = `<div class="section-label mt-12" style="margin-bottom:12px">📅 ${totalDays}-day plan · ${hours}h/day · ${subjects.length} subject(s)</div>`;
+
+  // Limit display to 30 days to avoid UI overload
+  const displayDays = Math.min(totalDays, 30);
+  const subjectSessions = Math.max(1, Math.floor(hours / subjects.length));
+
+  for (let d = 0; d < displayDays; d++) {
+    const day = new Date(start.getTime() + d * dayMs);
+    const dayStr = day.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
+    const dayName = day.toLocaleDateString('en-GB', { weekday: 'short' });
+
+    // Rotate which subject gets extra attention
+    const primarySubject = subjects[d % subjects.length];
+    const tasks = [];
+
+    subjects.forEach((sub, idx) => {
+      const sessionH = (sub === primarySubject) ? subjectSessions + 1 : subjectSessions;
+      tasks.push({ sub, h: Math.min(sessionH, hours), color: colors[idx % 3] });
+    });
+
+    // Cap total hours
+    let totalH = tasks.reduce((s, t) => s + t.h, 0);
+    if (totalH > hours) tasks[0].h -= (totalH - hours);
+
+    const pillsHtml = tasks.map(t =>
+      `<div class="task-pill ${t.color}">${t.sub} · ${t.h}h</div>`
+    ).join('');
+
+    html += `
+      <div class="study-day-row">
+        <div class="day-date">${dayName}, ${dayStr}</div>
+        <div class="day-tasks">${pillsHtml}</div>
+      </div>
+    `;
+  }
+
+  if (totalDays > 30) {
+    html += `<div class="text-xs text-dim" style="padding:10px 0 4px">…and ${totalDays - 30} more days up to exam date.</div>`;
+  }
+
+  // Exam day marker
+  const examStr = end.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+  html += `
+    <div class="study-day-row" style="border-top:1px solid var(--border);margin-top:8px;padding-top:12px;">
+      <div class="day-date" style="color:var(--red);font-weight:600">📝 EXAM</div>
+      <div class="day-tasks"><div class="task-pill" style="border-left-color:var(--red);color:var(--red)">${examStr}</div></div>
+    </div>
+  `;
+
+  output.innerHTML = html;
+}
+
+/* ============================================================
+   ③ HABIT TRACKER
+============================================================ */
+// Habits stored as: { id, name, checks: [bool x 7] }
+let habits = JSON.parse(localStorage.getItem('lifeos-habits') || '[]');
+
+function saveHabits() {
+  localStorage.setItem('lifeos-habits', JSON.stringify(habits));
+}
+
+// Render 7-day labels (Today and previous 6 days)
+function renderDayLabels() {
+  const row = document.getElementById('day-labels-row');
+  row.innerHTML = '';
+  const days = ['S','M','T','W','T','F','S'];
+  const today = new Date();
+
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(today);
+    d.setDate(today.getDate() - i);
+    const lbl = document.createElement('div');
+    lbl.className = 'day-lbl';
+    lbl.textContent = days[d.getDay()];
+    if (i === 0) lbl.style.color = 'var(--accent)';
+    row.appendChild(lbl);
+  }
+}
+
+function addHabit() {
+  const input = document.getElementById('habit-input');
+  const name = input.value.trim();
+  if (!name) return;
+
+  habits.push({ id: Date.now(), name, checks: [false,false,false,false,false,false,false] });
+  input.value = '';
+  saveHabits();
+  renderHabits();
+  updateHabitProgress();
+}
+
+function toggleHabitDay(habitId, dayIdx) {
+  const h = habits.find(h => h.id === habitId);
+  if (h) {
+    h.checks[dayIdx] = !h.checks[dayIdx];
+    saveHabits();
+    renderHabits();
+    updateHabitProgress();
+  }
+}
+
+function deleteHabit(habitId) {
+  habits = habits.filter(h => h.id !== habitId);
+  saveHabits();
+  renderHabits();
+  updateHabitProgress();
+}
+
+function getStreak(checks) {
+  // Streak = consecutive trues from end
+  let streak = 0;
+  for (let i = checks.length - 1; i >= 0; i--) {
+    if (checks[i]) streak++;
+    else break;
+  }
+  return streak;
+}
+
+function renderHabits() {
+  renderDayLabels();
+  const list = document.getElementById('habit-list');
+  if (habits.length === 0) {
+    list.innerHTML = '<div class="text-sm text-dim" style="padding:20px;text-align:center;">Add your first habit to get started 🌱</div>';
+    return;
+  }
+
+  list.innerHTML = habits.map(h => {
+    const streak = getStreak(h.checks);
+    const checks = h.checks.map((done, i) =>
+      `<div class="hcheck ${done ? 'done' : ''}" onclick="toggleHabitDay(${h.id}, ${i})" title="Day ${i+1}">
+        ${done ? '✓' : ''}
+      </div>`
+    ).join('');
+
+    return `
+      <div class="habit-row">
+        <div class="habit-name">${escapeHtml(h.name)}</div>
+        <div class="habit-checks">${checks}</div>
+        <div class="streak-badge">🔥 ${streak}</div>
+        <button class="habit-delete" onclick="deleteHabit(${h.id})" title="Delete">×</button>
+      </div>
+    `;
+  }).join('');
+}
+
+function updateHabitProgress() {
+  const section = document.getElementById('habit-progress-section');
+  if (habits.length === 0) {
+    section.innerHTML = '<div class="text-sm text-dim">No habits tracked yet.</div>';
+    return;
+  }
+
+  // Today's column = index 6
+  section.innerHTML = habits.map(h => {
+    const doneCount = h.checks.filter(Boolean).length;
+    const pct = Math.round((doneCount / 7) * 100);
+    return `
+      <div class="hp-item">
+        <div class="hp-top">
+          <span>${escapeHtml(h.name)}</span>
+          <span>${pct}%</span>
+        </div>
+        <div class="progress-wrap">
+          <div class="progress-bar" style="width:${pct}%;background:linear-gradient(90deg,var(--green),var(--accent))"></div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function escapeHtml(str) {
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+/* ============================================================
+   ④ WEALTH CALCULATOR
+============================================================ */
+let wealthChart = null; // canvas context reference
+
+function calculateWealth() {
+  const currentAge  = parseInt(document.getElementById('w-age').value) || 25;
+  const retireAge   = parseInt(document.getElementById('w-retire').value) || 60;
+  const monthly     = parseFloat(document.getElementById('w-monthly').value) || 10000;
+  const annualRate  = parseFloat(document.getElementById('w-return').value) / 100;
+
+  if (retireAge <= currentAge) {
+    alert('Retirement age must be greater than current age.');
+    return;
+  }
+
+  const years = retireAge - currentAge;
+  const monthlyRate = annualRate / 12;
+  const months = years * 12;
+
+  // Compound interest for monthly investments (Future Value of annuity)
+  let total = 0;
+  if (monthlyRate > 0) {
+    total = monthly * ((Math.pow(1 + monthlyRate, months) - 1) / monthlyRate) * (1 + monthlyRate);
+  } else {
+    total = monthly * months;
+  }
+
+  const invested = monthly * months;
+  const gains = total - invested;
+
+  // Display
+  document.getElementById('w-total').textContent = formatMoney(total);
+  document.getElementById('w-meta').textContent =
+    `Invested: ${formatMoney(invested)} · Growth: ${formatMoney(gains)} · ${years} years`;
+
+  const result = document.getElementById('wealth-result');
+  result.classList.add('show');
+
+  // Build milestone rows
+  const milestones = [];
+  for (let y = Math.ceil(years / 5) * 5; y <= years; y += Math.ceil(years / 5) * 5 === 0 ? years : Math.ceil(years / 5) * 5) {
+    break; // safety
+  }
+  const steps = Math.min(5, years);
+  const stepSize = Math.floor(years / steps);
+
+  const milestonesEl = document.getElementById('wealth-milestones');
+  let mHtml = '';
+  let maxVal = total;
+  for (let s = 1; s <= steps; s++) {
+    const yr = s * stepSize;
+    const m = yr * 12;
+    let val = 0;
+    if (monthlyRate > 0) {
+      val = monthly * ((Math.pow(1 + monthlyRate, m) - 1) / monthlyRate) * (1 + monthlyRate);
+    } else {
+      val = monthly * m;
+    }
+    const pct = (val / maxVal * 100).toFixed(0);
+    mHtml += `
+      <div class="milestone-row">
+        <span class="m-year">+${yr}yr</span>
+        <span class="m-val">${formatMoney(val)}</span>
+        <div class="progress-wrap">
+          <div class="progress-bar" style="width:${pct}%;background:linear-gradient(90deg,var(--accent),var(--green))"></div>
+        </div>
+      </div>
+    `;
+  }
+  milestonesEl.innerHTML = mHtml;
+
+  // Canvas chart
+  drawWealthChart(currentAge, retireAge, monthly, monthlyRate, total);
+}
+
+function drawWealthChart(currentAge, retireAge, monthly, monthlyRate, maxVal) {
+  const canvas = document.getElementById('wealth-canvas');
+  const ctx = canvas.getContext('2d');
+  const W = canvas.parentElement.clientWidth;
+  const H = 120;
+  canvas.width = W;
+  canvas.height = H;
+
+  const years = retireAge - currentAge;
+  const points = [];
+
+  for (let y = 0; y <= years; y++) {
+    const m = y * 12;
+    let val = 0;
+    if (monthlyRate > 0) {
+      val = monthly * ((Math.pow(1 + monthlyRate, m) - 1) / monthlyRate) * (1 + monthlyRate);
+    } else {
+      val = monthly * m;
+    }
+    points.push(val);
+  }
+
+  ctx.clearRect(0, 0, W, H);
+
+  // Gradient fill
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  const grad = ctx.createLinearGradient(0, 0, 0, H);
+  grad.addColorStop(0, isDark ? 'rgba(124,106,247,0.4)' : 'rgba(99,85,232,0.3)');
+  grad.addColorStop(1, 'rgba(124,106,247,0)');
+
+  ctx.beginPath();
+  points.forEach((v, i) => {
+    const x = (i / (points.length - 1)) * W;
+    const y = H - (v / maxVal) * (H - 10) - 5;
+    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+  });
+  ctx.lineTo(W, H);
+  ctx.lineTo(0, H);
+  ctx.closePath();
+  ctx.fillStyle = grad;
+  ctx.fill();
+
+  // Line
+  ctx.beginPath();
+  points.forEach((v, i) => {
+    const x = (i / (points.length - 1)) * W;
+    const y = H - (v / maxVal) * (H - 10) - 5;
+    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+  });
+  ctx.strokeStyle = isDark ? '#7c6af7' : '#6355e8';
+  ctx.lineWidth = 2.5;
+  ctx.lineJoin = 'round';
+  ctx.stroke();
+}
+
+function formatMoney(n) {
+  if (n >= 1e7) return '₹' + (n / 1e7).toFixed(2) + ' Cr';
+  if (n >= 1e5) return '₹' + (n / 1e5).toFixed(2) + ' L';
+  return '₹' + Math.round(n).toLocaleString();
+}
+
+/* ============================================================
+   ⑤ POMODORO TIMER
+============================================================ */
+const POMO_TIMES = { focus: 25 * 60, short: 5 * 60, long: 15 * 60 };
+let pomoState = {
+  mode: 'focus',
+  remaining: POMO_TIMES.focus,
+  running: false,
+  interval: null,
+  sessions: 0,
+  total: POMO_TIMES.focus
+};
+
+function updatePomoDisplay() {
+  const min = Math.floor(pomoState.remaining / 60).toString().padStart(2, '0');
+  const sec = (pomoState.remaining % 60).toString().padStart(2, '0');
+  document.getElementById('pomoDisplay').textContent = `${min}:${sec}`;
+  document.getElementById('pomoMode').textContent =
+    pomoState.mode === 'focus' ? 'Focus' : pomoState.mode === 'short' ? 'Short Break' : 'Long Break';
+
+  // Update ring
+  const arc = document.getElementById('pomoArc');
+  const circumference = 364.4;
+  const progress = pomoState.remaining / pomoState.total;
+  arc.style.strokeDashoffset = circumference * (1 - progress);
+
+  // Color based on mode
+  const colors = { focus: '#7c6af7', short: '#22d3a5', long: '#fbbf24' };
+  arc.style.stroke = colors[pomoState.mode];
+}
+
+function togglePomodoro() {
+  if (pomoState.running) {
+    clearInterval(pomoState.interval);
+    pomoState.running = false;
+    document.getElementById('pomoStartBtn').textContent = '▶ Resume';
+  } else {
+    pomoState.running = true;
+    document.getElementById('pomoStartBtn').textContent = '⏸ Pause';
+    pomoState.interval = setInterval(() => {
+      pomoState.remaining--;
+      updatePomoDisplay();
+      if (pomoState.remaining <= 0) {
+        clearInterval(pomoState.interval);
+        pomoState.running = false;
+        if (pomoState.mode === 'focus') {
+          pomoState.sessions++;
+          document.getElementById('pomo-count').textContent = `🍅 ${pomoState.sessions} session${pomoState.sessions !== 1 ? 's' : ''}`;
+          // Switch to break
+          pomoState.mode = pomoState.sessions % 4 === 0 ? 'long' : 'short';
+        } else {
+          pomoState.mode = 'focus';
+        }
+        pomoState.total = POMO_TIMES[pomoState.mode];
+        pomoState.remaining = pomoState.total;
+        document.getElementById('pomoStartBtn').textContent = '▶ Start';
+        updatePomoDisplay();
+        // Visual notification
+        document.title = '⏰ Time\'s up! · LifeOS';
+        setTimeout(() => { document.title = 'LifeOS — Your Life Dashboard'; }, 3000);
+      }
+    }, 1000);
+  }
+}
+
+function resetPomodoro() {
+  clearInterval(pomoState.interval);
+  pomoState.running = false;
+  pomoState.mode = 'focus';
+  pomoState.total = POMO_TIMES.focus;
+  pomoState.remaining = POMO_TIMES.focus;
+  document.getElementById('pomoStartBtn').textContent = '▶ Start';
+  updatePomoDisplay();
+}
+
+function skipPomodoro() {
+  clearInterval(pomoState.interval);
+  pomoState.running = false;
+  if (pomoState.mode === 'focus') {
+    pomoState.sessions++;
+    document.getElementById('pomo-count').textContent = `🍅 ${pomoState.sessions} session${pomoState.sessions !== 1 ? 's' : ''}`;
+    pomoState.mode = pomoState.sessions % 4 === 0 ? 'long' : 'short';
+  } else {
+    pomoState.mode = 'focus';
+  }
+  pomoState.total = POMO_TIMES[pomoState.mode];
+  pomoState.remaining = pomoState.total;
+  document.getElementById('pomoStartBtn').textContent = '▶ Start';
+  updatePomoDisplay();
+}
+
+/* ============================================================
+   TASK LIST
+============================================================ */
+let tasks = JSON.parse(localStorage.getItem('lifeos-tasks') || '[]');
+
+function saveTasks() { localStorage.setItem('lifeos-tasks', JSON.stringify(tasks)); }
+
+function addTask() {
+  const input = document.getElementById('task-input');
+  const text = input.value.trim();
+  if (!text) return;
+  tasks.push({ id: Date.now(), text, done: false });
+  input.value = '';
+  saveTasks();
+  renderTasks();
+}
+
+function toggleTask(id) {
+  const t = tasks.find(t => t.id === id);
+  if (t) { t.done = !t.done; saveTasks(); renderTasks(); }
+}
+
+function deleteTask(id) {
+  tasks = tasks.filter(t => t.id !== id);
+  saveTasks();
+  renderTasks();
+}
+
+function clearDoneTasks() {
+  tasks = tasks.filter(t => !t.done);
+  saveTasks();
+  renderTasks();
+}
+
+function renderTasks() {
+  const list = document.getElementById('task-list');
+  const total = tasks.length;
+  const done = tasks.filter(t => t.done).length;
+  document.getElementById('task-count').textContent = `${done}/${total} done`;
+
+  if (tasks.length === 0) {
+    list.innerHTML = '<div class="text-sm text-dim" style="padding:10px 0;">No tasks yet. Add one above!</div>';
+    return;
+  }
+
+  list.innerHTML = tasks.map(t => `
+    <div class="task-item">
+      <div class="task-check ${t.done ? 'done' : ''}" onclick="toggleTask(${t.id})">
+        ${t.done ? '✓' : ''}
+      </div>
+      <div class="task-text ${t.done ? 'done' : ''}">${escapeHtml(t.text)}</div>
+      <button class="task-del" onclick="deleteTask(${t.id})">×</button>
+    </div>
+  `).join('');
+}
+
+/* ============================================================
+   MOTIVATIONAL QUOTES
+============================================================ */
+const quotes = [
+  { text: "The only way to do great work is to love what you do.", author: "Steve Jobs" },
+  { text: "It does not matter how slowly you go as long as you do not stop.", author: "Confucius" },
+  { text: "Success is not final, failure is not fatal — it is the courage to continue that counts.", author: "Winston Churchill" },
+  { text: "Believe you can and you're halfway there.", author: "Theodore Roosevelt" },
+  { text: "Your time is limited, so don't waste it living someone else's life.", author: "Steve Jobs" },
+  { text: "The future belongs to those who believe in the beauty of their dreams.", author: "Eleanor Roosevelt" },
+  { text: "It always seems impossible until it's done.", author: "Nelson Mandela" },
+  { text: "Don't watch the clock; do what it does. Keep going.", author: "Sam Levenson" },
+  { text: "Strive not to be a success, but rather to be of value.", author: "Albert Einstein" },
+  { text: "The mind is everything. What you think you become.", author: "Buddha" },
+  { text: "An unexamined life is not worth living.", author: "Socrates" },
+  { text: "Life is what happens when you're busy making other plans.", author: "John Lennon" },
+  { text: "The purpose of life is not to be happy. It is to be useful, to be honorable, to be compassionate.", author: "Ralph Waldo Emerson" },
+  { text: "In the middle of difficulty lies opportunity.", author: "Albert Einstein" },
+  { text: "You miss 100% of the shots you don't take.", author: "Wayne Gretzky" },
+];
+
+let lastQuoteIdx = -1;
+function showQuote() {
+  let idx;
+  do { idx = Math.floor(Math.random() * quotes.length); } while (idx === lastQuoteIdx);
+  lastQuoteIdx = idx;
+  const q = quotes[idx];
+  document.getElementById('quoteText').textContent = `"${q.text}"`;
+  document.getElementById('quoteAuthor').textContent = `— ${q.author}`;
+}
+
+/* ============================================================
+   ⑥ IPHONE WALLPAPER GENERATOR
+============================================================ */
+
+// All iPhone models with native resolutions
+// iPhone 11 onwards only — models with identical resolutions are merged with "/"
+const IPHONE_MODELS = [
+  // 828×1792 — iPhone 11 / XR share this resolution
+  { name: 'iPhone 11 / XR',                   w: 828,  h: 1792, label:'11 / XR' },
+  // 1125×2436 — iPhone 11 Pro shares with X/XS but we start from 11
+  { name: 'iPhone 11 Pro',                     w: 1125, h: 2436, label:'11 Pro' },
+  // 1242×2688 — iPhone 11 Pro Max only in this era
+  { name: 'iPhone 11 Pro Max',                 w: 1242, h: 2688, label:'11 Pro Max' },
+  // 1080×2340 — iPhone 12 Mini only
+  { name: 'iPhone 12 Mini',                    w: 1080, h: 2340, label:'12 Mini' },
+  // 1170×2532 — 12, 12 Pro, 13, 13 Pro, 14 all share this
+  { name: 'iPhone 12 / 12 Pro / 13 / 13 Pro / 14', w: 1170, h: 2532, label:'12–14' },
+  // 1284×2778 — 12 Pro Max, 13 Pro Max, 14 Plus share this
+  { name: 'iPhone 12 Pro Max / 13 Pro Max / 14 Plus', w: 1284, h: 2778, label:'12–14 Max' },
+  // 1080×2340 — 13 Mini = same as 12 Mini (already covered above, skip duplicate)
+  // 1179×2556 — 14 Pro, 15, 15 Pro, 16 all share this
+  { name: 'iPhone 14 Pro / 15 / 15 Pro / 16', w: 1179, h: 2556, label:'14P–16' },
+  // 1290×2796 — 14 Pro Max, 15 Plus, 15 Pro Max, 16 Plus share this
+  { name: 'iPhone 14 Pro Max / 15 Plus / 15 Pro Max / 16 Plus', w: 1290, h: 2796, label:'14PM–16+' },
+  // 1206×2622 — 16 Pro only
+  { name: 'iPhone 16 Pro',                     w: 1206, h: 2622, label:'16 Pro' },
+  // 1320×2868 — 16 Pro Max only
+  { name: 'iPhone 16 Pro Max',                 w: 1320, h: 2868, label:'16 Pro Max' },
+];
+
+// Wallpaper style definitions
+const WP_STYLES = [
+  { id: 'cosmic',   label: 'Cosmic',   bg: ['#0a0015','#1a0040','#0d001a'] },
+  { id: 'aurora',   label: 'Aurora',   bg: ['#001a1a','#003330','#001510'] },
+  { id: 'dusk',     label: 'Dusk',     bg: ['#1a0a00','#2d0d20','#0a0015'] },
+  { id: 'minimal',  label: 'Minimal',  bg: ['#0c0c0f','#13131a','#0c0c0f'] },
+  { id: 'ocean',    label: 'Ocean',    bg: ['#000d1a','#001933','#00040d'] },
+  { id: 'forest',   label: 'Forest',   bg: ['#000d05','#001a0a','#000805'] },
+];
+
+let selectedModel = IPHONE_MODELS[4]; // iPhone 12–14 default (1170×2532)
+let selectedStyle = WP_STYLES[0];
+
+// Build model grid
+function buildModelGrid() {
+  const grid = document.getElementById('model-grid');
+  grid.innerHTML = IPHONE_MODELS.map((m, i) => `
+    <div class="model-btn ${i === 4 ? 'selected' : ''}" onclick="selectModel(${i})">
+      <div class="m-name">${m.label}</div>
+      <div class="m-res">${m.w}×${m.h}</div>
+    </div>
+  `).join('');
+}
+
+function selectModel(idx) {
+  selectedModel = IPHONE_MODELS[idx];
+  document.querySelectorAll('.model-btn').forEach((b, i) => {
+    b.classList.toggle('selected', i === idx);
+  });
+}
+
+// Build style grid
+function buildStyleGrid() {
+  const grid = document.getElementById('style-grid');
+  grid.innerHTML = WP_STYLES.map((s, i) => {
+    const grad = `linear-gradient(135deg, ${s.bg[0]}, ${s.bg[1]}, ${s.bg[2]})`;
+    return `
+      <div class="style-btn ${i === 0 ? 'selected' : ''}"
+           style="background:${grad}"
+           onclick="selectStyle(${i})">
+        <div class="style-label">${s.label}</div>
+      </div>
+    `;
+  }).join('');
+}
+
+function selectStyle(idx) {
+  selectedStyle = WP_STYLES[idx];
+  document.querySelectorAll('.style-btn').forEach((b, i) => {
+    b.classList.toggle('selected', i === idx);
+  });
+}
+
+// Main wallpaper renderer — GRID TOP, STATS BOTTOM
+function drawWallpaperOnCanvas(canvas, W, H, data) {
+  const ctx = canvas.getContext('2d');
+  canvas.width  = W;
+  canvas.height = H;
+
+  const { weeksLived, weeksLeft, totalWeeks, pct, name, color1, color2, style } = data;
+  const fs = (x) => Math.round(W * x);
+
+  // ── Background ───────────────────────────────────────────────
+  const bgGrad = ctx.createLinearGradient(0, 0, 0, H);
+  bgGrad.addColorStop(0,   style.bg[0]);
+  bgGrad.addColorStop(0.5, style.bg[1]);
+  bgGrad.addColorStop(1,   style.bg[2]);
+  ctx.fillStyle = bgGrad;
+  ctx.fillRect(0, 0, W, H);
+
+  // ── Glow ─────────────────────────────────────────────────────
+  const glow = ctx.createRadialGradient(W*0.5, H*0.85, 0, W*0.5, H*0.85, W*0.8);
+  glow.addColorStop(0, color1 + '44');
+  glow.addColorStop(1, 'transparent');
+  ctx.fillStyle = glow;
+  ctx.fillRect(0, 0, W, H);
+
+  const glow2 = ctx.createRadialGradient(W*0.15, H*0.5, 0, W*0.15, H*0.5, W*0.5);
+  glow2.addColorStop(0, color2 + '22');
+  glow2.addColorStop(1, 'transparent');
+  ctx.fillStyle = glow2;
+  ctx.fillRect(0, 0, W, H);
+
+  // ── Noise ────────────────────────────────────────────────────
+  for (let i = 0; i < 600; i++) {
+    const x = Math.random() * W;
+    const y = Math.random() * H;
+    ctx.beginPath();
+    ctx.arc(x, y, Math.random() * 1.2, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(255,255,255,${Math.random() * 0.05})`;
+    ctx.fill();
+  }
+
+  // ── GRID — from 22% down, takes up ~68% of screen height ─────
+  const cols    = 52;
+  const rows    = Math.ceil(totalWeeks / cols);
+  const gridPad = W * 0.05;
+  const gridTop = H * 0.22;
+  const gridMaxH = H * 0.68;
+  const dotArea = W - gridPad * 2;
+  const dotSize = Math.min(
+    Math.floor(dotArea / cols),
+    Math.floor(gridMaxH / rows)
+  );
+  const dot     = Math.max(2, dotSize - 2);
+  const gridW   = cols * dotSize;
+  const gridH   = rows * dotSize;
+  const gridLeft = (W - gridW) / 2;
+
+  for (let i = 0; i < totalWeeks; i++) {
+    const col = i % cols;
+    const row = Math.floor(i / cols);
+    const x   = gridLeft + col * dotSize + (dotSize - dot) / 2;
+    const y   = gridTop  + row * dotSize + (dotSize - dot) / 2;
+
+    if (i < weeksLived) {
+      ctx.fillStyle = color1 + 'dd';
+    } else if (i === weeksLived) {
+      const cg = ctx.createRadialGradient(x+dot/2, y+dot/2, 0, x+dot/2, y+dot/2, dot*4);
+      cg.addColorStop(0, color1 + 'aa');
+      cg.addColorStop(1, 'transparent');
+      ctx.fillStyle = cg;
+      ctx.fillRect(x-dot*3, y-dot*3, dot*8, dot*8);
+      ctx.fillStyle = '#ffffff';
+    } else {
+      ctx.fillStyle = 'rgba(255,255,255,0.07)';
+    }
+
+    ctx.beginPath();
+    ctx.roundRect(x, y, dot, dot, Math.max(1, dot * 0.3));
+    ctx.fill();
+  }
+
+  // ── Progress bar — right below the grid ──────────────────────
+  ctx.textAlign = 'center';
+
+  const barTopY = gridTop + gridH + H * 0.025;
+  const barW    = W * 0.80;
+  const barH2   = H * 0.014;
+  const barX    = (W - barW) / 2;
+  const barR    = barH2 / 2;
+
+  // Track
+  ctx.fillStyle = 'rgba(255,255,255,0.12)';
+  ctx.beginPath();
+  ctx.roundRect(barX, barTopY, barW, barH2, barR);
+  ctx.fill();
+
+  // Fill
+  const fillG = ctx.createLinearGradient(barX, 0, barX + barW, 0);
+  fillG.addColorStop(0, color1);
+  fillG.addColorStop(1, color2);
+  ctx.fillStyle = fillG;
+  ctx.beginPath();
+  ctx.roundRect(barX, barTopY, barW * (pct / 100), barH2, barR);
+  ctx.fill();
+
+  // Percentage label below bar
+  ctx.fillStyle = 'rgba(255,255,255,0.55)';
+  ctx.font      = `400 ${fs(0.036)}px "DM Sans", sans-serif`;
+  ctx.fillText(`${pct}% complete · ${weeksLeft.toLocaleString()} weeks left`, W/2, barTopY + barH2 + fs(0.052));
+
+  // ── Optional name ─────────────────────────────────────────────
+  if (name) {
+    ctx.fillStyle = 'rgba(255,255,255,0.38)';
+    ctx.font      = `400 ${fs(0.036)}px "DM Serif Display", serif`;
+    ctx.fillText(name, W / 2, H * 0.96);
+  }
+}
+
+function generateWallpaper() {
+  const dobVal    = document.getElementById('wp-dob').value;
+  const lifespan  = parseInt(document.getElementById('wp-lifespan').value) || 80;
+  const name      = document.getElementById('wp-name').value.trim();
+  const color1    = document.getElementById('wp-color1').value;
+  const color2    = document.getElementById('wp-color2').value;
+
+  if (!dobVal) { alert('Please enter your date of birth.'); return; }
+
+  const dob         = new Date(dobVal);
+  const msPerWeek   = 7 * 24 * 60 * 60 * 1000;
+  const weeksLived  = Math.floor((Date.now() - dob) / msPerWeek);
+  const totalWeeks  = lifespan * 52;
+  const weeksLeft   = Math.max(0, totalWeeks - weeksLived - 1);
+  const pct         = Math.min(100, (weeksLived / totalWeeks * 100)).toFixed(1);
+
+  const data = { weeksLived, weeksLeft, totalWeeks, pct: parseFloat(pct), name, color1, color2, style: selectedStyle };
+
+  // Draw full-res
+  const fullCanvas = document.getElementById('wallpaper-canvas');
+  drawWallpaperOnCanvas(fullCanvas, selectedModel.w, selectedModel.h, data);
+
+  // Draw preview (same function, small size)
+  const previewCanvas = document.getElementById('wp-preview-canvas');
+  drawWallpaperOnCanvas(previewCanvas, selectedModel.w, selectedModel.h, data);
+  // Scale preview canvas display via CSS (already sized in style)
+
+  // Update stats row
+  document.getElementById('wp-stats-row').style.display = 'flex';
+  document.getElementById('wp-stat-weeks').textContent  = `${weeksLeft.toLocaleString()} weeks left`;
+  document.getElementById('wp-stat-pct').textContent    = `${pct}% complete`;
+  document.getElementById('wp-stat-left').textContent   = `${(weeksLeft/52).toFixed(1)} years`;
+
+  // Generate a blob URL from the canvas for Shortcuts use
+  fullCanvas.toBlob(blob => {
+    // Revoke previous blob URL to free memory
+    const prevUrl = document.getElementById('wp-url-field').dataset.blobUrl;
+    if (prevUrl) URL.revokeObjectURL(prevUrl);
+
+    const blobUrl = URL.createObjectURL(blob);
+    const urlField = document.getElementById('wp-url-field');
+    urlField.value = blobUrl;
+    urlField.dataset.blobUrl = blobUrl;
+
+    // Enable copy button
+    const copyBtn = document.querySelector('.url-copy-btn');
+    copyBtn.style.opacity = '1';
+    copyBtn.style.pointerEvents = 'auto';
+  }, 'image/png');
+
+  // Enable download
+  const dlBtn = document.getElementById('dl-btn');
+  dlBtn.style.opacity = '1';
+  dlBtn.style.pointerEvents = 'auto';
+  document.getElementById('wp-res-label').textContent =
+    `${selectedModel.name} · ${selectedModel.w}×${selectedModel.h}px`;
+
+  // Big stat
+  document.getElementById('wp-big-stat').style.display = 'block';
+  document.getElementById('wp-big-num').textContent = weeksLeft.toLocaleString();
+}
+
+function copyWpUrl() {
+  const field = document.getElementById('wp-url-field');
+  const val = field.value;
+  if (!val || val.startsWith('Generate')) {
+    alert('Please generate your wallpaper first by clicking ✨ Generate Wallpaper above.');
+    return;
+  }
+
+  // Select the text in the field
+  field.select();
+  field.setSelectionRange(0, 99999);
+
+  const btn = document.querySelector('.url-copy-btn');
+
+  navigator.clipboard.writeText(val).then(() => {
+    btn.textContent = '✓';
+    btn.style.background = 'var(--green)';
+    btn.style.color = '#fff';
+    setTimeout(() => {
+      btn.textContent = '⧉';
+      btn.style.background = '';
+      btn.style.color = '';
+    }, 2500);
+  }).catch(() => {
+    // Fallback for older browsers
+    try {
+      document.execCommand('copy');
+      btn.textContent = '✓';
+      btn.style.background = 'var(--green)';
+      btn.style.color = '#fff';
+      setTimeout(() => {
+        btn.textContent = '⧉';
+        btn.style.background = '';
+        btn.style.color = '';
+      }, 2500);
+    } catch(e) {
+      alert('Could not auto-copy. Please manually select and copy the URL in the box.');
+    }
+  });
+}
+
+function downloadWallpaper() {
+  const canvas = document.getElementById('wallpaper-canvas');
+  const link   = document.createElement('a');
+  link.download = `lifeos-wallpaper-${selectedModel.label.replace(/\//g,'-')}-week${Math.floor((Date.now()-new Date(document.getElementById('wp-dob').value))/(7*24*60*60*1000))}.png`;
+  link.href = canvas.toDataURL('image/png');
+  link.click();
+}
+
+// Init wallpaper section on load
+document.addEventListener('DOMContentLoaded', () => {
+  buildModelGrid();
+  buildStyleGrid();
+  // Pre-fill DOB from life grid if already set
+  const lifeGridDob = document.getElementById('dob-input').value;
+  if (lifeGridDob) document.getElementById('wp-dob').value = lifeGridDob;
+
+  // Sync DOB inputs
+  document.getElementById('dob-input').addEventListener('change', e => {
+    document.getElementById('wp-dob').value = e.target.value;
+  });
+  document.getElementById('wp-dob').addEventListener('change', e => {
+    document.getElementById('dob-input').value = e.target.value;
+  });
+});
+
+// Canvas roundRect polyfill for older browsers
+if (!CanvasRenderingContext2D.prototype.roundRect) {
+  CanvasRenderingContext2D.prototype.roundRect = function(x, y, w, h, r) {
+    if (w < 2*r) r = w/2;
+    if (h < 2*r) r = h/2;
+    this.beginPath();
+    this.moveTo(x+r, y);
+    this.arcTo(x+w, y,   x+w, y+h, r);
+    this.arcTo(x+w, y+h, x,   y+h, r);
+    this.arcTo(x,   y+h, x,   y,   r);
+    this.arcTo(x,   y,   x+w, y,   r);
+    this.closePath();
+  };
+}
+window.addEventListener('DOMContentLoaded', () => {
+  // Set today's date as defaults
+  const todayStr = new Date().toISOString().split('T')[0];
+  document.getElementById('study-start').value = todayStr;
+
+  // Init components
+  showQuote();
+  renderTasks();
+  renderHabits();
+  updateHabitProgress();
+  updatePomoDisplay();
+
+  // Staggered card animation
+  document.querySelectorAll('.card').forEach((card, i) => {
+    card.style.animationDelay = `${i * 0.06}s`;
+  });
+});
+</script>
+
+</body>
+</html>
